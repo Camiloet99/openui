@@ -1,0 +1,47 @@
+CREATE DATABASE IF NOT EXISTS iu_auth CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE iu_auth;
+
+CREATE TABLE IF NOT EXISTS users (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  email VARCHAR(190) NOT NULL UNIQUE,
+  dni VARCHAR(32) NOT NULL UNIQUE,
+  name VARCHAR(190) NOT NULL,
+  genero VARCHAR(32),
+  edad INT,
+  fecha_nacimiento DATE,
+  phone VARCHAR(64),
+  telefono VARCHAR(64),
+  celular VARCHAR(64),
+  email_personal VARCHAR(190),
+  ciudad_residencia VARCHAR(120),
+  subregion VARCHAR(120),
+  tipo_documento_id VARCHAR(32),
+  enfoque_diferencial VARCHAR(120),
+  programa VARCHAR(160),
+  nivel VARCHAR(80),
+  avatar_id INT,
+  password_hash VARCHAR(200) NOT NULL,
+  role VARCHAR(32) NOT NULL,
+  enabled BOOLEAN NOT NULL DEFAULT TRUE,
+
+  initial_test_done BOOLEAN NOT NULL DEFAULT FALSE,
+  exit_test_done    BOOLEAN NOT NULL DEFAULT FALSE,
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS user_progress (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  email VARCHAR(190) NOT NULL,
+  medalla1 BOOLEAN NOT NULL DEFAULT FALSE,
+  medalla2 BOOLEAN NOT NULL DEFAULT FALSE,
+  medalla3 BOOLEAN NOT NULL DEFAULT FALSE,
+  medalla4 BOOLEAN NOT NULL DEFAULT FALSE,
+  test_initial_done BOOLEAN NOT NULL DEFAULT FALSE,
+  test_exit_done BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_user_progress_email (email),
+  CONSTRAINT fk_user_progress_user FOREIGN KEY (user_id) REFERENCES users(id)
+);

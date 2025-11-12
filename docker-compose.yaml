@@ -1,0 +1,64 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: iu_auth              # <<-- coincide con tu YAML
+      TZ: America/Bogota
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD} || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [app-net]
+
+  backend:
+    build:
+      context: ./servicios
+    container_name: backend
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: iu_auth                    # <<-- coincide con tu YAML
+      DB_USER: root                       # <<-- root
+      DB_PASSWORD: root                   # <<-- root
+      JWT_SECRET: "EPzuE1fY/zKURZ0eklR27ULNZTpAO51+dfDWt3iJRI7zyv+UdDjXaDlkV7X1I04r89mvdet5CAWSFkfrKv+fmg=="
+      APP_ROSTER_CSV_PATH: "/app/data/data.csv"
+    volumes:
+      - ./servicios/data:/app/data:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    networks: [app-net]
+
+  frontend:
+    build:
+      context: ./portalweb
+      dockerfile: Dockerfile
+      args:
+        BUILD_DIR: dist
+    container_name: frontend
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "8081:80"
+    networks: [app-net]
+
+networks:
+  app-net:
+
+volumes:
+  mysql_data:

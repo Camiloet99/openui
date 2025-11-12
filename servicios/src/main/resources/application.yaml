@@ -1,0 +1,40 @@
+server:
+  port: 8080
+
+spring:
+  r2dbc:
+    url: r2dbc:pool:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:iu_auth}?serverTimezone=UTC
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:root}
+  sql:
+    init:
+      mode: never
+
+app:
+  nivel99:
+    base-url: "https://nivel99.com/UniminutoBackend"
+  jwt:
+    secret: ${JWT_SECRET:EPzuE1fY/zKURZ0eklR27ULNZTpAO51+dfDWt3iJRI7zyv+UdDjXaDlkV7X1I04r89mvdet5CAWSFkfrKv+fmg==}
+    access-minutes: 60
+
+  roster:
+    csv-path: "./data/data.csv"
+    delimiter: ";"
+    charset: "windows-1252"
+    cols:
+      ciudadResidencia: "Ciudad_Residencia"
+      subregion: "SUBREGION"
+      name: "Nombre"
+      tipoDocumentoId: "ID_TIPO_DOCUMENTO"
+      dni: "NUM_DOCUMENTO"
+      fechaNacimiento: "FECHA_NACIMIENTO"
+      edad: "EDAD"
+      genero: "GENERO"
+      telefono: "Telefono"
+      celular: "Celular"
+      emailPersonal: "Email"
+      emailInstitutional: "Email_institucional"
+      enfoqueDiferencial: "ENFOQUE DIFERENCIAL"
+      programa: "Programa"
+      nivel: "Nivel"
+      admin: "Admin"
