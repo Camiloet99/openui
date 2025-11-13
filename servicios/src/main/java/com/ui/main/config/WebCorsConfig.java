@@ -15,18 +15,15 @@ public class WebCorsConfig {
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration cors = new CorsConfiguration();
 
-        cors.setAllowedOriginPatterns(List.of(
-                "http://localhost:*",
-                "http://127.0.0.1:*",
-                "http://9.234.153.13",
-                "http://9.234.153.13:*"
+        // Orígenes explícitos
+        cors.setAllowedOrigins(List.of(
+                "http://9.234.153.13",      // frontend en Azure (puerto 80)
+                "http://localhost:5173",    // dev Vite (si usas)
+                "http://127.0.0.1:5173"
         ));
 
         cors.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
-        cors.setAllowedHeaders(List.of(
-                "Authorization", "Content-Type", "Accept",
-                "X-Requested-With", "Origin"
-        ));
+        cors.setAllowedHeaders(List.of("*"));
         cors.setExposedHeaders(List.of("Authorization", "Content-Type"));
         cors.setAllowCredentials(true);
         cors.setMaxAge(3600L);
