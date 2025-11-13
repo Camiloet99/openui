@@ -17,7 +17,9 @@ public class WebCorsConfig {
 
         cors.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",
-                "http://127.0.0.1:*"
+                "http://127.0.0.1:*",
+                "http://9.234.153.13",
+                "http://9.234.153.13:*"
         ));
 
         cors.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
