@@ -16,6 +16,8 @@ import NiaChat from "@/pages/NiaChat";
 
 import TermsPrivacyPage from "@/pages/legal/TermsPrivacyPage";
 import DataPolicyPage from "@/pages/legal/DataPolicyPage";
+import AdminPanel from "@/pages/AdminPanel";
+import AdminRoute from "@/routes/AdminRoute";
 
 const router = createBrowserRouter([
   { path: "/login", element: <AuthGateway /> },
@@ -35,6 +37,14 @@ const router = createBrowserRouter([
           { path: "*", element: <Navigate to="/courses" replace /> },
           { path: "/experience", element: <Experience /> },
           { path: "/chat", element: <NiaChat /> },
+          {
+            path: "/admin",
+            element: (
+              <AdminRoute>
+                <AdminPanel />
+              </AdminRoute>
+            ),
+          },
         ],
       },
     ],

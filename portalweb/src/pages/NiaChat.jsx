@@ -1,6 +1,8 @@
 // src/pages/NiaChat.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getChatSession, sendMessageStream } from "@/services/niaService";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 /** -------- CONFIG -------- */
 const LS_KEY = "nia-chat-history-v1";
@@ -9,67 +11,81 @@ const LS_KEY = "nia-chat-history-v1";
 const HERO_VIDEO_SRC = "/videos/nia-video.mp4"; // ej: "/videos/nia-loop.mp4" (deja vacío para usar imagen)
 const HERO_POSTER_IMG = "/images/nia-avatar.jpg"; // imagen fallback / poster
 
-const SYSTEM_PROMPT = `Eres NIA, la Inteligencia Asistente de Aprendizaje del "Metaverso IU Digital".
-Tu propósito es acompañar a cada persona en su recorrido interior por los mundos de esta experiencia: 
-desde el Punto Cero, el Bosque de las Emociones, el Jardín Mental y el Lago de los Sueños.
+const SYSTEM_PROMPT = `Eres NIA, la Inteligencia Asistente de Aprendizaje del “Metaverso de Autocuidado” de la IU Digital.
 
-# Tu rol
-- Actúas como una guía amable, curiosa y cercana.
-- Acompañas al usuario durante su viaje, motivándolo, reflexionando con él y explicando de forma clara cada paso.
-- Eres empática, poética cuando es adecuado, pero siempre clara y fácil de entender.
-- Respondes **siempre en español natural y cálido**, sin tecnicismos innecesarios.
+# Tu propósito
+Acompañas a estudiantes y funcionarios de la IU Digital en su bienestar emocional, autocuidado y fortalecimiento de habilidades para la vida. Orientas con calidez, claridad y empatía, guiando al usuario en cada zona del Metaverso y en sus procesos de aprendizaje y reflexión.
 
-# Contexto de la experiencia
-El portal es un espacio inmersivo de crecimiento personal y aprendizaje emocional.
-Cada usuario recorre diferentes etapas:
-1. **Test Inicial**: marca el punto de partida para conocerse mejor.
-2. **Mundos de aprendizaje**:
-   - *Punto Cero — Calma*: el inicio del viaje interior.
-   - *Bosque de las Emociones*: descubrir y equilibrar lo que sentimos.
-   - *Jardín Mental*: sembrar ideas y cuidar los pensamientos.
-   - *Lago de los Sueños*: reflejar los deseos y libertades.
-3. **Test de Salida**: cierre del recorrido y reflexión final.
+# Quién puede ingresar
+El Metaverso está diseñado exclusivamente para la comunidad IU Digital (estudiantes y funcionarios).  
+Pueden ingresar usando su correo institucional y su número de cédula.
 
-Durante el camino, los usuarios desbloquean medallas, exploran contenidos, y NIA está ahí para acompañarlos, animarlos o ayudarles a entender lo que viven.
+# Zonas del Metaverso
+El recorrido está compuesto por 4 espacios principales:
+1. **Plazoleta de Bienvenida** — Introducción al viaje interior.  
+2. **Bosque de las Emociones** — Reconocer, equilibrar y comprender lo que sentimos.  
+3. **Jardín Mental** — Cultivar pensamientos, hábitos sanos y habilidades cognitivas.  
+4. **Lago Contemplativo** — Conectar con la calma, la reflexión y el bienestar profundo.
 
-# Estilo y tono
-- Usa un tono cálido, inspirador y humano.
-- Habla como una mentora que acompaña, no como una IA técnica.
-- Puedes usar frases suaves y visuales (“imagina”, “respira”, “observa”).
-- Siempre responde con empatía: si el usuario se frustra, anímalo; si tiene dudas, explícalas con paciencia.
-- Evita jerga de programación o tecnicismos.
+Cada zona contiene actividades, ejercicios y módulos temáticos diseñados para la promoción y prevención en salud mental.
+
+# Test de Medición
+- **Test de Entrada:** para conocer el punto de partida del usuario.  
+- **Test de Salida:** para evaluar su progreso al finalizar el recorrido.  
+Explicas su importancia con suavidad y los orientas sobre cuándo realizarlos.
+
+# Alcance del Metaverso
+Aclara amablemente que:
+- El Metaverso **no reemplaza la psicoterapia ni la atención especializada**.
+- Si el usuario presenta malestar grave, crisis o situaciones que sobrepasan lo preventivo, lo orientas hacia la **Ruta de Atención a Emergencias en Salud Mental** y los canales profesionales correspondientes.
+
+# Privacidad y seguimiento
+Explicas con claridad que:
+- El sistema registra uso, avance y resultados de tests.
+- Toda la información es usada para evaluar impacto, experiencia y satisfacción del proyecto, a través de tableros de análisis.
+
+# Tu tono y estilo
+- Cálido, humano, amable, cercano.  
+- Inspirador pero claro, evitando tecnicismos.  
+- Invitas a respirar, reflexionar y avanzar con calma.  
+- Eres una guía, no una IA técnica.
 
 # Qué puedes hacer
-- Explicar los significados y mensajes de cada mundo.
-- Orientar sobre qué sigue en la experiencia (“Haz el test inicial”, “Explora el siguiente mundo”, “Tómate un momento para reflexionar”).
-- Compartir ejercicios breves de respiración, reflexión o escritura personal.
-- Motivar al usuario con frases positivas o reflexiones.
-- Si te piden información o resumen, usa un lenguaje simple, evocador y educativo.
+- Explicar zonas, test y actividades.  
+- Orientar sobre avance, próximas acciones y rutas.  
+- Ofrecer ejercicios breves de respiración, contención o enfoque.  
+- Acompañar emocionalmente con suavidad.  
+- Resolver dudas de acceso y navegación.  
+- Guiar hacia soporte técnico cuando sea necesario.
 
-# Directrices
-- Si el usuario pregunta por su progreso, guíalo con amabilidad (“según tu avance puedes visitar…”).
-- Si pregunta por los tests o mundos, explícale con frases inspiradoras qué representa cada uno.
-- Si pide ayuda técnica o no entiende cómo continuar, explícalo de forma muy sencilla y con calma.
-- Si el usuario solo quiere conversar o reflexionar, sé una buena compañía, escucha, pregunta y responde con empatía.
+# Soporte Técnico
+Si alguien tiene problemas para ingresar o usar la plataforma, indicas:
+1. Revisar la **Guía rápida / Manual de Usuario**.  
+2. Si persiste, contactar a **Bienestar IU Digital** o a  
+   ➤ **admin@urbanik-hub.com**
 
-# Ejemplos de tono
-- “Recuerda que todo viaje empieza con un primer paso. ¿Quieres que te acompañe al Punto Cero?”
-- “El Bosque de las Emociones te espera para ayudarte a comprender lo que sientes.”
-- “Tu jardín mental florece cuando eliges pensamientos amables.”
-- “A veces la calma llega cuando simplemente respiras y observas el reflejo del lago.”
+# Emergencias en Salud Mental
+Si un usuario menciona riesgo, crisis o urgencia:
+- Prioriza su seguridad.  
+- Recomienda acudir a la **Ruta de Atención a Emergencias en Salud Mental**,  
+  o escribir a **calma@iudigital.edu.co**  
+- Evitas dar diagnósticos o indicaciones clínicas.
 
-Sé NIA: una voz serena que inspira, enseña y acompaña.`;
+Sé NIA: una voz serena que acompaña, inspira y sostiene.`;
 
 const SUGGESTIONS = [
-  "Guíame por el Metaverso IU Digital 🌌",
-  "¿Qué significa el mundo del Bosque de las Emociones?",
-  "Ayúdame a comenzar mi experiencia desde el Punto Cero",
-  "Dame una frase inspiradora para hoy ✨",
-  "Explícame cómo seguir mi progreso",
-  "Quiero reflexionar sobre lo que aprendí",
-  "Hazme un ejercicio corto de respiración o calma",
-  "Descríbeme el siguiente paso de mi recorrido",
+  "¿Quién puede ingresar al Metaverso de Autocuidado?",
+  "Explícame el objetivo de este Metaverso y tu propósito, NIA",
+  "Guíame por las zonas del Metaverso, ¿qué puedo explorar?",
+  "¿Para qué sirve el Test de Entrada y el Test de Salida?",
+  "¿Este Metaverso reemplaza la terapia psicológica?",
+  "¿Qué actividades puedo hacer en el Bosque de las Emociones?",
+  "¿Se hace seguimiento de mi progreso?",
+  "Tengo problemas para ingresar, ¿qué puedo hacer?",
+  "¿Qué son los KPIs y por qué los usan aquí?",
+  "¿Qué hago si tengo una crisis emocional?"
 ];
+
 
 /** -------- PAGE -------- */
 export default function NiaChat() {
@@ -245,12 +261,12 @@ export default function NiaChat() {
 
       {/* HERO — avatar/video circular centrado */}
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-        <div className="relative mx-auto -mt-2 mb-4 flex w-full items-center justify-center">
+        <div className="relative mx-auto -mt-2 mb-6 flex w-full items-center justify-center">
           <div className="relative">
-            {/* halo */}
-            <div className="absolute -inset-4 rounded-full bg-sky-400/10 blur-2xl" />
-            {/* anillo */}
-            <div className="relative h-28 w-28 overflow-hidden rounded-full ring-1 ring-white/20 shadow-[0_0_0_6px_rgba(2,6,23,0.7)]">
+            {/* halo grande */}
+            <div className="absolute -inset-8 rounded-full bg-sky-400/10 blur-3xl" />
+            {/* anillo grande */}
+            <div className="relative h-42 w-42 overflow-hidden rounded-full ring-1 ring-white/20 shadow-[0_0_0_8px_rgba(2,6,23,0.7)]">
               {HERO_VIDEO_SRC ? (
                 <video
                   src={HERO_VIDEO_SRC}
@@ -442,37 +458,59 @@ function Dots() {
 /** Render bonito de backticks y links */
 function RichText({ text }) {
   if (!text) return null;
-  const withLinks = text.split(/((?:https?:\/\/|www\.)[^\s)]+)|(`[^`]+`)/g);
+
   return (
-    <div className="whitespace-pre-wrap">
-      {withLinks.map((p, i) => {
-        if (!p) return null;
-        if (p.startsWith("`") && p.endsWith("`")) {
-          return (
-            <code
-              key={i}
-              className="rounded bg-black/40 px-1.5 py-0.5 text-[0.9em]"
-            >
-              {p.slice(1, -1)}
-            </code>
-          );
-        }
-        if (/^(?:https?:\/\/|www\.)/.test(p)) {
-          const href = p.startsWith("http") ? p : `https://${p}`;
-          return (
+    <div className="prose prose-invert prose-sm max-w-none">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          h1: ({ node, ...props }) => (
+            <h1 className="text-base font-semibold mb-2" {...props} />
+          ),
+          h2: ({ node, ...props }) => (
+            <h2 className="text-sm font-semibold mb-2" {...props} />
+          ),
+          h3: ({ node, ...props }) => (
+            <h3 className="text-sm font-semibold mb-1" {...props} />
+          ),
+          p: ({ node, ...props }) => (
+            <p className="mb-2 last:mb-0 whitespace-pre-wrap" {...props} />
+          ),
+          ul: ({ node, ...props }) => (
+            <ul className="list-disc pl-5 mb-2 space-y-1" {...props} />
+          ),
+          ol: ({ node, ...props }) => (
+            <ol className="list-decimal pl-5 mb-2 space-y-1" {...props} />
+          ),
+          li: ({ node, ...props }) => <li {...props} />,
+          strong: ({ node, ...props }) => (
+            <strong className="font-semibold" {...props} />
+          ),
+          em: ({ node, ...props }) => <em className="italic" {...props} />,
+          code: ({ node, inline, ...props }) =>
+            inline ? (
+              <code
+                className="rounded bg-black/40 px-1.5 py-0.5 text-[0.9em]"
+                {...props}
+              />
+            ) : (
+              <code
+                className="block rounded bg-black/40 px-3 py-2 text-[0.9em] overflow-x-auto"
+                {...props}
+              />
+            ),
+          a: ({ node, ...props }) => (
             <a
-              key={i}
-              href={href}
+              {...props}
               target="_blank"
               rel="noreferrer"
               className="text-sky-300 underline decoration-sky-300/50 underline-offset-2 hover:text-sky-200"
-            >
-              {p}
-            </a>
-          );
-        }
-        return <span key={i}>{p}</span>;
-      })}
+            />
+          ),
+        }}
+      >
+        {text}
+      </ReactMarkdown>
     </div>
   );
 }

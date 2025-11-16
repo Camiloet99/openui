@@ -34,7 +34,7 @@ app:
       celular: "Celular"
       emailPersonal: "Email"
       emailInstitutional: "Email_institucional"
-      enfoqueDiferencial: "ENFOQUE DIFERENCIAL"
+      enfoqueDiferencial: "ENFOQUE_DIFERENCIAL"
       programa: "Programa"
       nivel: "Nivel"
       admin: "Admin"

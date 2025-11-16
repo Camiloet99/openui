@@ -6,6 +6,7 @@ import homeIcon from "@/assets/layout/home.png";
 import chatIcon from "@/assets/layout/chat.png";
 import profileIcon from "@/assets/layout/profile.png";
 import logoutIcon from "@/assets/layout/logout.png";
+import dataIcon from "@/assets/layout/data.png";
 import partner1 from "@/assets/partner-1-white.png";
 import partner2 from "@/assets/partner-2-white.png";
 
@@ -46,11 +47,17 @@ function Item({ to, imgSrc, label }) {
 
 /* ---------- Bottom nav (mobile) ---------- */
 function MobileNav() {
+  const { session } = useAuth();
+
   const items = [
     { to: "/courses", icon: homeIcon, label: "Inicio" },
     { to: "/chat", icon: chatIcon, label: "Chat Nio" },
     { to: "/profile", icon: profileIcon, label: "Mi perfil" },
   ];
+
+  if (session?.user?.role === "ADMIN") {
+    items.push({ to: "/admin", icon: profileIcon, label: "Datos" });
+  }
 
   return (
     <nav
@@ -65,9 +72,9 @@ function MobileNav() {
       "
       aria-label="Navegación principal"
     >
-      <ul className="grid grid-cols-3 gap-2">
+      <ul className="flex flex-nowrap justify-between gap-2">
         {items.map(({ to, icon, label }) => (
-          <li key={to} className="flex justify-center">
+          <li key={to} className="flex-1 flex justify-center">
             <NavLink
               to={to}
               className="group flex flex-col items-center gap-1.5 text-[11px] leading-tight select-none"
@@ -141,6 +148,9 @@ export default function DashboardLayout() {
         <nav className="mt-12 flex w-full flex-col items-stretch gap-4">
           <Item to="/courses" imgSrc={homeIcon} label="Inicio" />
           <Item to="/chat" imgSrc={chatIcon} label="Chat Nio" />
+          {session?.user?.role === "ADMIN" && (
+            <Item to="/admin" imgSrc={dataIcon} label="Datos" />
+          )}
         </nav>
 
         <div className="mt-auto w-full" />

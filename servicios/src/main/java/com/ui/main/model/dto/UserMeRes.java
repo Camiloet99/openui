@@ -37,7 +37,7 @@ public class UserMeRes {
                 .id(u.getId()).email(u.getEmail()).dni(u.getDni())
                 .name(u.getName()).genero(u.getGenero()).edad(u.getEdad())
                 .fechaNacimiento(u.getFechaNacimiento())
-                .phone(u.getPhone()).telefono(u.getTelefono()).celular(u.getCelular())
+                .phone(u.getCelular()).telefono(u.getTelefono()).celular(u.getCelular())
                 .emailPersonal(u.getEmailPersonal()).ciudadResidencia(u.getCiudadResidencia())
                 .subregion(u.getSubregion()).tipoDocumentoId(u.getTipoDocumentoId())
                 .enfoqueDiferencial(u.getEnfoqueDiferencial())

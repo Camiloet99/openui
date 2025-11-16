@@ -70,7 +70,6 @@ public class AuthService {
                             .genero(r.genero())
                             .edad(r.edad())
                             .fechaNacimiento(r.fechaNacimiento())
-                            .phone(r.celular() != null ? r.celular() : r.telefono())
                             .telefono(r.telefono())
                             .celular(r.celular())
                             .emailPersonal(r.emailPersonal())

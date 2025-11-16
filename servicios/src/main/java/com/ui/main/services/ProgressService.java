@@ -1,6 +1,8 @@
 package com.ui.main.services;
 
+import com.ui.main.model.dto.PagedUsersWithExperienceStatusRes;
 import com.ui.main.model.dto.ProgressMeRes;
+import com.ui.main.model.dto.UserWithExperienceStatusRes;
 import com.ui.main.repository.UserRepository;
 import com.ui.main.repository.entity.UserEntity;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,58 @@ public class ProgressService {
 
     private final ExternalProgressService external;
     private final UserRepository users;
+
+    public Mono<PagedUsersWithExperienceStatusRes> getUsersExperienceStatusPage(int page, int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+
+        Mono<List<ExternalProgressService.UserProgressDto>> progressMono = external.readAll();
+        Mono<Long> totalUsersMono = users.count();
+        Mono<List<UserEntity>> pageUsersMono = users.findAll()
+                .skip((long) safePage * safeSize)
+                .take(safeSize)
+                .collectList();
+
+        return Mono.zip(progressMono, totalUsersMono, pageUsersMono)
+                .map(tuple -> {
+                    List<ExternalProgressService.UserProgressDto> progressList = tuple.getT1();
+                    long totalUsers = tuple.getT2();
+                    List<UserEntity> pageUsers = tuple.getT3();
+
+                    List<UserWithExperienceStatusRes> mapped = pageUsers.stream()
+                            .map(u -> mapUserWithExperienceStatus(u, progressList))
+                            .toList();
+
+                    return PagedUsersWithExperienceStatusRes.builder()
+                            .userList(mapped)
+                            .totalUsers(totalUsers)
+                            .page(safePage)
+                            .size(safeSize)
+                            .build();
+                });
+    }
+
+
+    private UserWithExperienceStatusRes mapUserWithExperienceStatus(
+            UserEntity u,
+            List<ExternalProgressService.UserProgressDto> progressList
+    ) {
+        ExternalProgressService.UserProgressDto p = findByDni(progressList, u.getDni());
+
+        boolean m1 = p != null && p.isMedalla1();
+        boolean m2 = p != null && p.isMedalla2();
+        boolean m3 = p != null && p.isMedalla3();
+        boolean m4 = p != null && p.isMedalla4();
+
+        boolean allMedals = m1 && m2 && m3 && m4;
+        boolean testsDone = bool(u.getInitialTestDone()) && bool(u.getExitTestDone());
+
+        String experienceStatus = (allMedals && testsDone)
+                ? "complete"
+                : "progress";
+
+        return UserWithExperienceStatusRes.of(u, experienceStatus);
+    }
 
     public Mono<ProgressMeRes> getMyProgress(String email) {
         return users.findByEmailIgnoreCase(email)

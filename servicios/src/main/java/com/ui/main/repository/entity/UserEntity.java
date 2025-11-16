@@ -30,7 +30,6 @@ public class UserEntity {
     @Column("fecha_nacimiento")
     private LocalDate fechaNacimiento;
 
-    private String phone;
     private String telefono;
     private String celular;
 

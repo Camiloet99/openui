@@ -1,13 +1,12 @@
 package com.ui.main.controller;
 
-import com.ui.main.model.dto.MedalsPatchReq;
-import com.ui.main.model.dto.ProgressMeRes;
-import com.ui.main.model.dto.TestSubmitReq;
+import com.ui.main.model.dto.*;
 import com.ui.main.services.ProgressService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RestController
@@ -41,5 +40,13 @@ public class ProgressController {
                 .zipWith(body)
                 .flatMap(t -> progress.markTestDone(t.getT1(), t.getT2().kind()))
                 .then();
+    }
+
+    @GetMapping("/all")
+    public Mono<PagedUsersWithExperienceStatusRes> getUsersWithExperienceStatusPage(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size
+    ) {
+        return progress.getUsersExperienceStatusPage(page, size);
     }
 }
