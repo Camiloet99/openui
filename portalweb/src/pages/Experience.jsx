@@ -241,7 +241,7 @@ export default function Experience() {
     }
 
     checkProgressAndRedirect();
-    timerId = setInterval(checkProgressAndRedirect, 10000);
+    timerId = setInterval(checkProgressAndRedirect, 5000);
 
     return () => {
       cancelled = true;

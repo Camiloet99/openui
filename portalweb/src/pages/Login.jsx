@@ -79,6 +79,7 @@ export default function AuthGateway() {
   const [loginValues, setLoginValues] = useState({ email: "", pass: "" });
   const [loginErrors, setLoginErrors] = useState({ email: "", pass: "" });
   const [loginOkBurst, setLoginOkBurst] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   async function handleLoginSubmit(e) {
     e.preventDefault();
@@ -93,11 +94,14 @@ export default function AuthGateway() {
 
     if (isEmail(loginValues.email) && loginValues.pass) {
       try {
+        setIsLoggingIn(true);
         await login(loginValues.email, loginValues.pass);
         setLoginOkBurst(true);
         setTimeout(() => navigate("/courses"), 250);
       } catch {
         setLoginErrors((p) => ({ ...p, pass: "Credenciales inválidas" }));
+      } finally {
+        setIsLoggingIn(false); // ⬅️ desactivamos loader
       }
     }
   }
@@ -417,6 +421,7 @@ export default function AuthGateway() {
                         errors={loginErrors}
                         values={loginValues}
                         setValues={setLoginValues}
+                        isLoading={isLoggingIn} 
                       />
                       <div className="sr-only" aria-live="polite">
                         {loginErrors?.email || loginErrors?.pass
