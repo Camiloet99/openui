@@ -49,4 +49,9 @@ public class ProgressController {
     ) {
         return progress.getUsersExperienceStatusPage(page, size);
     }
+
+    @GetMapping("/all/export")
+    public Flux<UserWithExperienceStatusRes> getAllUsersWithExperienceStatus() {
+        return progress.getAllUsersExperienceStatus();
+    }
 }

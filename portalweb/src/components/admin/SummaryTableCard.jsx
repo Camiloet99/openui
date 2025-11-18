@@ -2,8 +2,15 @@
 import { useMemo, useState } from "react";
 import Spinner from "@/components/ui/Spinner";
 
+function getCompletionState(rawStatus) {
+  const progress = getProgressFromStatus(rawStatus);
+  return progress >= 100 ? "complete" : "progress";
+}
+
 function StatusPill({ status }) {
-  const isComplete = status === "complete";
+  const state = getCompletionState(status); // "complete" o "progress"
+  const isComplete = state === "complete";
+
   return (
     <span
       className={[
@@ -19,9 +26,25 @@ function StatusPill({ status }) {
   );
 }
 
-function getProgressFromStatus(status) {
-  if (status === "complete") return 100;
-  if (status === "progress") return 60;
+function getProgressFromStatus(rawStatus) {
+  // Caso nuevo: número directo (0-100)
+  if (typeof rawStatus === "number" && !Number.isNaN(rawStatus)) {
+    return Math.min(Math.max(rawStatus, 0), 100);
+  }
+
+  // Caso string numérica: "80"
+  if (typeof rawStatus === "string") {
+    const parsed = parseInt(rawStatus, 10);
+    if (!Number.isNaN(parsed)) {
+      return Math.min(Math.max(parsed, 0), 100);
+    }
+  }
+
+  // Compatibilidad hacia atrás: antes enviábamos "complete" / "progress"
+  if (rawStatus === "complete") return 100;
+  if (rawStatus === "progress") return 60;
+
+  // Por defecto, nada hecho
   return 0;
 }
 

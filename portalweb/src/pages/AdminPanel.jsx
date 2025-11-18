@@ -8,6 +8,28 @@ import ParticipationSliderCard from "@/components/admin/ParticipationSliderCard"
 import GeoMapCard from "@/components/admin/GeoMapCard";
 import SummaryTableCard from "@/components/admin/SummaryTableCard";
 
+// Helper para interpretar experienceStatus (numérico o legacy string)
+function getProgressFromStatus(rawStatus) {
+  // Nuevo formato: número 0–100
+  if (typeof rawStatus === "number" && !Number.isNaN(rawStatus)) {
+    return Math.min(Math.max(rawStatus, 0), 100);
+  }
+
+  // Por si llegara como string numérica
+  if (typeof rawStatus === "string") {
+    const parsed = parseInt(rawStatus, 10);
+    if (!Number.isNaN(parsed)) {
+      return Math.min(Math.max(parsed, 0), 100);
+    }
+  }
+
+  // Compatibilidad hacia atrás
+  if (rawStatus === "complete") return 100;
+  if (rawStatus === "progress") return 60;
+
+  return 0;
+}
+
 export default function AdminPanel() {
   const { session } = useAuth();
 
@@ -35,7 +57,6 @@ export default function AdminPanel() {
         setUsers(data?.userList ?? []);
         setTotalUsers(data?.totalUsers ?? 0);
 
-        // Por si el backend ajusta page/size
         if (typeof data?.page === "number") {
           setPage(data.page);
         }
@@ -61,13 +82,22 @@ export default function AdminPanel() {
     };
   }, [session?.token, page, size]);
 
-  // Métricas globales
-  // total viene del backend (totalUsers), completed/inProgress sobre la página actual
+  // Métricas globales usando el porcentaje real
   const { total, completed, inProgress } = useMemo(() => {
     const total = totalUsers;
-    const completed = users.filter((u) => u.experienceStatus === "complete")
-      .length;
-    const inProgress = (users?.length ?? 0) - completed;
+    let completed = 0;
+    let inProgress = 0;
+
+    users.forEach((u) => {
+      const progress = getProgressFromStatus(u.experienceStatus);
+
+      if (progress >= 100) {
+        completed += 1;
+      } else if (progress > 0) {
+        inProgress += 1;
+      }
+    });
+
     return { total, completed, inProgress };
   }, [users, totalUsers]);
 
@@ -77,33 +107,39 @@ export default function AdminPanel() {
 
   return (
     <div className="space-y-8">
-      {/* Arriba: métricas + slider / mapa */}
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.7fr)]">
-        {/* Columna izquierda (Impact + slider) */}
-        <div className="flex flex-col gap-6">
+      {/* Layout responsivo:
+          - Mobile: columna → Mapa (1), Impact (2), Slider (3)
+          - Desktop (lg): grid 2 columnas → Izq (Impact+Slider), Der (Mapa)
+      */}
+      <section className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.7fr)]">
+        {/* Mapa */}
+        <div className="order-1 lg:order-2">
+          <GeoMapCard users={users} />
+        </div>
+
+        {/* Impact summary + slider */}
+        <div className="order-2 lg:order-1 flex flex-col gap-6">
           <ImpactSummaryCard
             total={total}
             completed={completed}
             inProgress={inProgress}
           />
-
           <ParticipationSliderCard users={users} />
         </div>
-
-        {/* Columna derecha: mapa (más ancho) */}
-        <GeoMapCard />
       </section>
 
-      {/* Abajo: tabla paginada */}
-      <SummaryTableCard
-        users={users}
-        loading={loading}
-        error={error}
-        page={page}
-        size={size}
-        total={totalUsers}
-        onPageChange={handlePageChange}
-      />
+      {/* Tabla paginada: oculta en mobile, visible desde md */}
+      <section className="hidden md:block">
+        <SummaryTableCard
+          users={users}
+          loading={loading}
+          error={error}
+          page={page}
+          size={size}
+          total={totalUsers}
+          onPageChange={handlePageChange}
+        />
+      </section>
     </div>
   );
 }

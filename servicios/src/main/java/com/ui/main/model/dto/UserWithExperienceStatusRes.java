@@ -8,15 +8,16 @@ public record UserWithExperienceStatusRes(
         String dni,
         String name,
         Boolean enabled,
-        String experienceStatus,
+        int experienceStatus,      // <- ahora es int
         String subregion,
         String genero,
         Integer edad,
         String enfoqueDiferencial,
         String nivel,
-        String programa
+        String programa,
+        String municipio
 ) {
-    public static UserWithExperienceStatusRes of(UserEntity u, String experienceStatus) {
+    public static UserWithExperienceStatusRes of(UserEntity u, int experienceStatus) {
         return new UserWithExperienceStatusRes(
                 u.getId(),
                 u.getEmail(),
@@ -29,7 +30,8 @@ public record UserWithExperienceStatusRes(
                 u.getEdad(),
                 u.getEnfoqueDiferencial(),
                 u.getNivel(),
-                u.getPrograma()
+                u.getPrograma(),
+                u.getCiudadResidencia()
         );
     }
 }

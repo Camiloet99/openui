@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -57,17 +58,23 @@ public class ProgressService {
     ) {
         ExternalProgressService.UserProgressDto p = findByDni(progressList, u.getDni());
 
+        boolean initialTestDone = bool(u.getInitialTestDone());
+        boolean exitTestDone    = bool(u.getExitTestDone());
+
         boolean m1 = p != null && p.isMedalla1();
         boolean m2 = p != null && p.isMedalla2();
         boolean m3 = p != null && p.isMedalla3();
         boolean m4 = p != null && p.isMedalla4();
 
-        boolean allMedals = m1 && m2 && m3 && m4;
-        boolean testsDone = bool(u.getInitialTestDone()) && bool(u.getExitTestDone());
+        int experienceStatus = 0;
 
-        String experienceStatus = (allMedals && testsDone)
-                ? "complete"
-                : "progress";
+        if (initialTestDone) experienceStatus += 10;
+        if (exitTestDone)    experienceStatus += 10;
+
+        if (m1) experienceStatus += 20;
+        if (m2) experienceStatus += 20;
+        if (m3) experienceStatus += 20;
+        if (m4) experienceStatus += 20;
 
         return UserWithExperienceStatusRes.of(u, experienceStatus);
     }
@@ -147,6 +154,15 @@ public class ProgressService {
                 m1, m2, m3, m4,
                 bool(u.getInitialTestDone()),
                 bool(u.getExitTestDone())
+        );
+    }
+
+    public Flux<UserWithExperienceStatusRes> getAllUsersExperienceStatus() {
+        Mono<List<ExternalProgressService.UserProgressDto>> progressMono = external.readAll();
+
+        return progressMono.flatMapMany(progressList ->
+                users.findAll()
+                        .map(u -> mapUserWithExperienceStatus(u, progressList))
         );
     }
 }
