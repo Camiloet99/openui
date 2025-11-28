@@ -46,8 +46,10 @@ public class RosterService {
     }
 
     public Mono<RosterRow> findByInstitutionalEmail(String email) {
-        return ensureLoaded().map(map -> map.get(normalizeEmail(email)));
+        return ensureLoaded()
+                .flatMap(mapa -> Mono.justOrEmpty(mapa.get(normalizeEmail(email))));
     }
+
 
     private Mono<Map<String, RosterRow>> ensureLoaded() {
         Path path = Paths.get(props.getCsvPath());
