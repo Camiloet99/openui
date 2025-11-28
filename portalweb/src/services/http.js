@@ -1,6 +1,7 @@
 import { getAuthToken } from "@/services/session";
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
+// 👉 En dev usas VITE_API_URL; en prod, misma origin (cadena vacía)
+const BASE_URL = import.meta.env.VITE_API_URL ?? "";
 
 function emitUnauthorized() {
   try {
