@@ -49,6 +49,8 @@ services:
       dockerfile: Dockerfile
       args:
         BUILD_DIR: dist
+        VITE_GEMINI_API_KEY: ${VITE_GEMINI_API_KEY}
+        VITE_API_URL: ${VITE_API_URL}
     container_name: frontend
     depends_on:
       backend:
