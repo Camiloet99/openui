@@ -25,14 +25,48 @@ function buildPercentSeries(counts) {
     .sort((a, b) => b.count - a.count);
 }
 
+// 🔹 Normaliza subregión: agrupa ignore case y devuelve un label “bonito”
+function normalizeSubregion(raw) {
+  const value = (raw || "").trim();
+  if (!value) return "Sin subregión";
+
+  const upper = value.toUpperCase();
+
+  switch (upper) {
+    case "BAJO CAUCA":
+      return "Bajo Cauca";
+    case "MAGDALENA MEDIO":
+      return "Magdalena Medio";
+    case "NORDESTE":
+      return "Nordeste";
+    case "NORTE":
+      return "Norte";
+    case "OCCIDENTE":
+      return "Occidente";
+    case "ORIENTE":
+      return "Oriente";
+    case "SUROESTE":
+      return "Suroeste";
+    case "URABA":
+    case "URABÁ":
+      return "Uraba";
+    case "VALLE DEL ABURRA":
+    case "VALLE DEL ABURRÁ":
+      return "Valle del Aburra";
+    default:
+      // Si no está mapeada, devolvemos tal cual venía, pero sin espacios extra
+      return value;
+  }
+}
+
 export default function ParticipationSliderCard({ users }) {
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(1); // 1 → derecha, -1 → izquierda
 
   const slides = useMemo(() => {
-    // Subregión
+    // Subregión (agrupando ignore case)
     const subregionCounts = users.reduce((acc, u) => {
-      const key = u.subregion || "Sin subregión";
+      const key = normalizeSubregion(u.subregion);
       acc[key] = (acc[key] || 0) + 1;
       return acc;
     }, {});
@@ -118,10 +152,6 @@ export default function ParticipationSliderCard({ users }) {
 
   if (!current) return null;
 
-  /** 🎯 Donut dinámico sin huecos oscuros:
-   *   - Usa 0%–100% en lugar de grados.
-   *   - No añade segmento de relleno.
-   */
   const donutGradient = (() => {
     const series = current.series || [];
     if (!series.length) {
@@ -142,7 +172,6 @@ export default function ParticipationSliderCard({ users }) {
       return `${color} ${start}% ${end}%`;
     });
 
-    // Llenamos el círculo completo con los colores de la serie
     return `conic-gradient(from -90deg, ${segments.join(",")})`;
   })();
 
@@ -224,7 +253,7 @@ export default function ParticipationSliderCard({ users }) {
           transition={{ duration: 0.25, ease: "easeOut" }}
           className="flex flex-col lg:flex-row gap-6 mt-2"
         >
-          {/* ⭕ Donut dinámico (ocupando más espacio, sin borde oscuro grande) */}
+          {/* Donut */}
           <div className="flex-1 flex items-center justify-center">
             <motion.div
               initial={{ scale: 0.92, opacity: 0 }}
@@ -232,17 +261,13 @@ export default function ParticipationSliderCard({ users }) {
               transition={{ duration: 0.25, ease: "easeOut" }}
               className="relative h-40 w-40 md:h-48 md:w-48"
             >
-              {/* Glow exterior */}
               <div className="absolute inset-0 rounded-full bg-gradient-to-br from-indigo-500/40 to-sky-400/30 blur-xl" />
-
-              {/* Donut “grande” centrado */}
               <div className="relative flex h-full w-full items-center justify-center">
                 <div className="relative h-[82%] w-[82%] rounded-full bg-[#24293F] border border-white/10 overflow-hidden">
                   <div
                     className="absolute inset-0 opacity-90"
                     style={{ background: donutGradient }}
                   />
-                  {/* Agujero central un poco más pequeño para que el aro se vea grueso */}
                   <div className="absolute inset-[26%] rounded-full bg-[#1F2336]" />
                 </div>
               </div>
@@ -283,14 +308,13 @@ export default function ParticipationSliderCard({ users }) {
             })}
 
             {current.series.length === 0 && (
-              <p className="text-xs text-white/60">
+              <p className="text-xs text_WHITE/60">
                 Aún no hay datos suficientes para esta vista.
               </p>
             )}
           </div>
         </motion.div>
       </AnimatePresence>
-      {/* Paginador 1/4 */}
       <div className="mt-4 flex justify-end">
         <span className="text-xs text-white/60">
           {index + 1}/{totalSlides}

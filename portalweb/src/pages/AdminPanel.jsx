@@ -1,48 +1,73 @@
 // src/pages/AdminPanel.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getAdminUsers } from "@/services/adminService";
-
 import ImpactSummaryCard from "@/components/admin/ImpactSummaryCard";
 import ParticipationSliderCard from "@/components/admin/ParticipationSliderCard";
 import GeoMapCard from "@/components/admin/GeoMapCard";
 import SummaryTableCard from "@/components/admin/SummaryTableCard";
+import { exportAdminUsers } from "@/services/adminService";
+import { EXTRA_STUDENTS } from "@/data/extraStudents";
 
 // Helper para interpretar experienceStatus (numérico o legacy string)
 function getProgressFromStatus(rawStatus) {
-  // Nuevo formato: número 0–100
   if (typeof rawStatus === "number" && !Number.isNaN(rawStatus)) {
     return Math.min(Math.max(rawStatus, 0), 100);
   }
-
-  // Por si llegara como string numérica
   if (typeof rawStatus === "string") {
     const parsed = parseInt(rawStatus, 10);
     if (!Number.isNaN(parsed)) {
       return Math.min(Math.max(parsed, 0), 100);
     }
   }
-
-  // Compatibilidad hacia atrás
   if (rawStatus === "complete") return 100;
   if (rawStatus === "progress") return 60;
-
   return 0;
+}
+
+function mergeBackendWithExtra(backendUsers = [], extraStudents = []) {
+  const byEmail = new Map();
+
+  backendUsers.forEach((u) => {
+    if (!u?.email) return;
+    byEmail.set(u.email.toLowerCase(), { ...u });
+  });
+
+  extraStudents.forEach((extra) => {
+    const email = extra.email?.toLowerCase();
+    if (!email) return;
+
+    if (byEmail.has(email)) {
+      const current = byEmail.get(email);
+      byEmail.set(email, {
+        ...current,
+        ...extra,
+        experienceStatus:
+          extra.experienceStatus ?? current.experienceStatus ?? 0,
+      });
+    } else {
+      byEmail.set(email, { ...extra });
+    }
+  });
+
+  return Array.from(byEmail.values());
 }
 
 export default function AdminPanel() {
   const { session } = useAuth();
 
-  const [users, setUsers] = useState([]);
+  const [allUsers, setAllUsers] = useState([]); // 👈 ahora guardamos TODOS + extra
   const [totalUsers, setTotalUsers] = useState(0);
-  const [page, setPage] = useState(0);
+
+  const [page, setPage] = useState(0); // paginación solo frontend
   const [size, setSize] = useState(20);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Carga de datos paginada
+  // Carga de datos (una sola vez) usando el endpoint que trae TODO
   useEffect(() => {
+    if (!session?.token) return;
+
     let isMounted = true;
 
     const load = async () => {
@@ -50,45 +75,50 @@ export default function AdminPanel() {
         setLoading(true);
         setError(null);
 
-        const data = await getAdminUsers(page, size);
+        // 🔹 Este endpoint trae TODOS los usuarios del backend
+        const backendData = await exportAdminUsers(); // Array<UserWithExperienceStatusRes>
 
         if (!isMounted) return;
 
-        setUsers(data?.userList ?? []);
-        setTotalUsers(data?.totalUsers ?? 0);
+        // 🔹 Combinamos backend + EXTRA_STUDENTS sin duplicar
+        const merged = mergeBackendWithExtra(backendData ?? [], EXTRA_STUDENTS);
 
-        if (typeof data?.page === "number") {
-          setPage(data.page);
-        }
-        if (typeof data?.size === "number") {
-          setSize(data.size);
-        }
+        setAllUsers(merged);
+        setTotalUsers(merged.length);
+
+        // Opcional: reset de página al recargar
+        setPage(0);
       } catch (e) {
         if (!isMounted) return;
         setError(e.message || "Error al cargar datos");
-        setUsers([]);
+        setAllUsers([]);
         setTotalUsers(0);
       } finally {
         if (isMounted) setLoading(false);
       }
     };
 
-    if (session?.token) {
-      load();
-    }
+    load();
 
     return () => {
       isMounted = false;
     };
-  }, [session?.token, page, size]);
+  }, [session?.token]);
 
-  // Métricas globales usando el porcentaje real
+  // Paginación en frontend: sacamos SOLO la página actual
+  const usersPage = useMemo(() => {
+    const start = page * size;
+    const end = start + size;
+    return allUsers.slice(start, end);
+  }, [allUsers, page, size]);
+
+  // Métricas globales usando TODOS los usuarios combinados
   const { total, completed, inProgress } = useMemo(() => {
     const total = totalUsers;
     let completed = 0;
     let inProgress = 0;
 
-    users.forEach((u) => {
+    allUsers.forEach((u) => {
       const progress = getProgressFromStatus(u.experienceStatus);
 
       if (progress >= 100) {
@@ -99,7 +129,7 @@ export default function AdminPanel() {
     });
 
     return { total, completed, inProgress };
-  }, [users, totalUsers]);
+  }, [allUsers, totalUsers]);
 
   const handlePageChange = (nextPage) => {
     setPage(nextPage);
@@ -107,36 +137,33 @@ export default function AdminPanel() {
 
   return (
     <div className="space-y-8">
-      {/* Layout responsivo:
-          - Mobile: columna → Mapa (1), Impact (2), Slider (3)
-          - Desktop (lg): grid 2 columnas → Izq (Impact+Slider), Der (Mapa)
-      */}
+      {/* Mapa (usa TODOS para el heatmap) */}
       <section className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.7fr)]">
-        {/* Mapa */}
         <div className="order-1 lg:order-2">
-          <GeoMapCard users={users} />
+          {/* 👇 Le pasamos todos los usuarios combinados */}
+          <GeoMapCard users={allUsers} />
         </div>
 
-        {/* Impact summary + slider */}
+        {/* Impact summary + slider (también usan TODOS) */}
         <div className="order-2 lg:order-1 flex flex-col gap-6">
           <ImpactSummaryCard
             total={total}
             completed={completed}
             inProgress={inProgress}
           />
-          <ParticipationSliderCard users={users} />
+          <ParticipationSliderCard users={allUsers} />
         </div>
       </section>
 
-      {/* Tabla paginada: oculta en mobile, visible desde md */}
+      {/* Tabla paginada: recibe solo la página actual */}
       <section className="hidden md:block">
         <SummaryTableCard
-          users={users}
+          users={usersPage}      // 👈 solo la página
           loading={loading}
           error={error}
           page={page}
           size={size}
-          total={totalUsers}
+          total={totalUsers}     // 👈 total global combinado
           onPageChange={handlePageChange}
         />
       </section>

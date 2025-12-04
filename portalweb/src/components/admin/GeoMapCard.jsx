@@ -10,6 +10,8 @@ import tag3 from "@/assets/admin/tags/tag3.png";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+import { EXTRA_STUDENTS } from "@/data/extraStudents";
+
 const TAG_IMAGES = [tag1, tag2, tag3];
 
 // 🔹 Activa esto en true mientras ajustas posiciones
@@ -70,7 +72,9 @@ export default function GeoMapCard({ users = [] }) {
       // 1) Traer todos los usuarios del backend
       const data = await exportAdminUsers(); // Array<UserWithExperienceStatusRes>
 
-      // 2) Crear el PDF (landscape)
+      // 2) Combinar BE + estáticos para el informe
+      const combined = [...(data ?? []), ...EXTRA_STUDENTS];
+
       const doc = new jsPDF({ orientation: "landscape" });
 
       doc.setFontSize(14);
@@ -79,7 +83,6 @@ export default function GeoMapCard({ users = [] }) {
       doc.setFontSize(10);
       doc.text(`Generado: ${new Date().toLocaleString("es-CO")}`, 14, 22);
 
-      // 3) Armar encabezados y filas
       const head = [
         [
           "Nombre",
@@ -95,20 +98,19 @@ export default function GeoMapCard({ users = [] }) {
         ],
       ];
 
-      const body = (data ?? []).map((u) => [
+      const body = combined.map((u) => [
         u.name ?? "",
         u.email ?? "",
-        u.subregion ?? "",
         u.municipio ?? "",
+        u.subregion ?? "",
         u.experienceStatus ?? "",
         u.genero ?? "",
         u.edad != null ? String(u.edad) : "",
         u.enfoqueDiferencial ?? "",
-        u.nivel ?? "",
+        u.nivel != null ? String(u.nivel) : "",
         u.programa ?? "",
       ]);
 
-      // 4) Tabla con autoTable (versión moderna)
       autoTable(doc, {
         head,
         body,
@@ -117,7 +119,7 @@ export default function GeoMapCard({ users = [] }) {
           fontSize: 8,
         },
         headStyles: {
-          fillColor: [41, 55, 92], // azul oscurito
+          fillColor: [41, 55, 92],
           textColor: 255,
         },
         alternateRowStyles: {
@@ -125,7 +127,6 @@ export default function GeoMapCard({ users = [] }) {
         },
       });
 
-      // 5) Descargar
       doc.save("informe-participacion-antioquia.pdf");
     } catch (err) {
       console.error("Error exportando PDF", err);
