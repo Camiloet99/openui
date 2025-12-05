@@ -24,6 +24,41 @@ function getProgressFromStatus(rawStatus) {
   return 0;
 }
 
+// 🔹 Correos administrativos explícitos
+const ADMIN_EMAIL_SET = new Set(
+  [
+    "benavideznaida@gmail.com",
+    "camilo@gmail.com",
+    "hahnahhernandez396@gmail.com",
+    "luis.vargas@iudigital.edu.co",
+    "uriel.osorio@iudigital.edu.co",
+    "isabellacasasperez1@gmail.com",
+    "julia.puerta@iudigital.edu.co",
+    "wilmer.medina@iudigital.edu.co",
+    "iudigital.isabelcastro@gmail.com",
+    "rabedoya551@gmail.com",
+    "sados20222@gmail.com",
+  ].map((e) => e.toLowerCase())
+);
+
+// 🔹 Regla para marcar si un usuario es administrativo
+function isAdminUser(user) {
+  const email = (user?.email || "").trim().toLowerCase();
+  if (!email) return false;
+
+  if (ADMIN_EMAIL_SET.has(email)) return true;
+
+  // Todos los que sean @iudigital.edu.co (pero NO @est.iudigital.edu.co) se consideran administrativos
+  if (
+    email.endsWith("@iudigital.edu.co") &&
+    !email.endsWith("@est.iudigital.edu.co")
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 function mergeBackendWithExtra(backendUsers = [], extraStudents = []) {
   const byEmail = new Map();
 
@@ -55,7 +90,7 @@ function mergeBackendWithExtra(backendUsers = [], extraStudents = []) {
 export default function AdminPanel() {
   const { session } = useAuth();
 
-  const [allUsers, setAllUsers] = useState([]); // 👈 ahora guardamos TODOS + extra
+  const [allUsers, setAllUsers] = useState([]); // TODOS (estudiantes + admin)
   const [totalUsers, setTotalUsers] = useState(0);
 
   const [page, setPage] = useState(0); // paginación solo frontend
@@ -75,18 +110,14 @@ export default function AdminPanel() {
         setLoading(true);
         setError(null);
 
-        // 🔹 Este endpoint trae TODOS los usuarios del backend
         const backendData = await exportAdminUsers(); // Array<UserWithExperienceStatusRes>
 
         if (!isMounted) return;
 
-        // 🔹 Combinamos backend + EXTRA_STUDENTS sin duplicar
         const merged = mergeBackendWithExtra(backendData ?? [], EXTRA_STUDENTS);
 
         setAllUsers(merged);
         setTotalUsers(merged.length);
-
-        // Opcional: reset de página al recargar
         setPage(0);
       } catch (e) {
         if (!isMounted) return;
@@ -105,31 +136,37 @@ export default function AdminPanel() {
     };
   }, [session?.token]);
 
-  // Paginación en frontend: sacamos SOLO la página actual
+  // 🔹 Participantes reales (sin administrativos) para estadísticas
+  const participants = useMemo(
+    () => allUsers.filter((u) => !isAdminUser(u)),
+    [allUsers]
+  );
+
+  // Paginación en frontend: la tabla muestra TODOS (incluye administrativos)
   const usersPage = useMemo(() => {
     const start = page * size;
     const end = start + size;
     return allUsers.slice(start, end);
   }, [allUsers, page, size]);
 
-  // Métricas globales usando TODOS los usuarios combinados
+  // Métricas globales usando SOLO participantes (sin admin)
   const { total, completed, inProgress } = useMemo(() => {
-    const total = totalUsers;
+    const total = participants.length;
     let completed = 0;
     let inProgress = 0;
 
-    allUsers.forEach((u) => {
+    participants.forEach((u) => {
       const progress = getProgressFromStatus(u.experienceStatus);
 
       if (progress >= 100) {
         completed += 1;
-      } else if (progress > 0) {
+      } else {
         inProgress += 1;
       }
     });
 
     return { total, completed, inProgress };
-  }, [allUsers, totalUsers]);
+  }, [participants]);
 
   const handlePageChange = (nextPage) => {
     setPage(nextPage);
@@ -137,33 +174,36 @@ export default function AdminPanel() {
 
   return (
     <div className="space-y-8">
-      {/* Mapa (usa TODOS para el heatmap) */}
+      {/* Mapa: aquí puedes decidir si quieres incluir admin o no.
+          Ahora mismo usa TODOS (allUsers). */}
       <section className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.7fr)]">
         <div className="order-1 lg:order-2">
-          {/* 👇 Le pasamos todos los usuarios combinados */}
           <GeoMapCard users={allUsers} />
+          {/* Si quieres excluir admin del mapa, cambia a:
+              <GeoMapCard users={participants} />
+          */}
         </div>
 
-        {/* Impact summary + slider (también usan TODOS) */}
+        {/* Impact summary + slider → usan SOLO participantes (sin admin) */}
         <div className="order-2 lg:order-1 flex flex-col gap-6">
           <ImpactSummaryCard
             total={total}
             completed={completed}
             inProgress={inProgress}
           />
-          <ParticipationSliderCard users={allUsers} />
+          <ParticipationSliderCard users={participants} />
         </div>
       </section>
 
-      {/* Tabla paginada: recibe solo la página actual */}
+      {/* Tabla paginada: muestra TODOS, incluyendo administrativos */}
       <section className="hidden md:block">
         <SummaryTableCard
-          users={usersPage}      // 👈 solo la página
+          users={usersPage}
           loading={loading}
           error={error}
           page={page}
           size={size}
-          total={totalUsers}     // 👈 total global combinado
+          total={totalUsers}
           onPageChange={handlePageChange}
         />
       </section>
